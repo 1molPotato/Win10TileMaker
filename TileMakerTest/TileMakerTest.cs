@@ -43,10 +43,10 @@ namespace TileMakerTest
         }
 
         [TestMethod]
-        public void UpdateShortcutTest()
+        public void CreateShortcutTest()
         {
             var maker = new TileMaker(PATH);
-            maker.UpdateShortcut();
+            maker.CreateShortcut();
             Assert.IsTrue(File.Exists(@"C:\ProgramData\Microsoft\Windows\Start Menu\Programs\HelloTileMaker.lnk"));
         }
 
@@ -58,6 +58,15 @@ namespace TileMakerTest
             maker.MakeTile();
             Assert.IsTrue(File.Exists("../../TestFiles/HelloTileMaker.VisualElementsManifest.xml"));
             Assert.IsTrue(File.Exists(@"C:\ProgramData\Microsoft\Windows\Start Menu\Programs\HelloTileMaker.lnk"));
+        }
+
+        [TestMethod]
+        public void RemoveCustomizationTest()
+        {
+            var maker = new TileMaker(PATH);
+            maker.RemoveCustomization(@"C:\ProgramData\Microsoft\Windows\Start Menu\Programs\HelloTileMaker.lnk");
+            Assert.IsTrue(!File.Exists("../../TestFiles/HelloTileMaker.VisualElementsManifest.xml-wtm"));
+            Assert.IsTrue(!File.Exists("../../TestFiles/Win10TileMaker_Assets"));
         }
     }
 }

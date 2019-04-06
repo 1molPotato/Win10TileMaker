@@ -37,5 +37,9 @@ namespace TileMakerLibrary
         {
             _showNameOnSquare150x150Logo = show;
         }
+        public void SetForegroundColor(bool isLight)
+        {
+            _foregroundTextLight = isLight;
+        }
     }
 }

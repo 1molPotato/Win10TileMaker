@@ -34,28 +34,48 @@ namespace TileMakerLibrary
 
         public void SetSquareLogo(string path)
         {
-            // full path of the logo's imgae
-            string name = "SquareLogo.png";
+            // full path of the logo's imgae file
+            SetSquare150x150Logo(path);
+            SetSquare70x70Logo(path);            
+        }
+
+        public void SetSquare150x150Logo(string path)
+        {
+            string name = "150x150Logo.png";
             File.Copy(path, Path.Combine(_assetsPath, name), true);
             _tile.Square150x150Logo = $"{_asseteDirName}\\{name}";
-            //name = "70x70Logo.png";
-            //File.Copy(path, Path.Combine(_assetsPath, name), true);
+        }
+
+        public void SetSquare70x70Logo(string path)
+        {
+            string name = "70x70Logo.png";
+            File.Copy(path, Path.Combine(_assetsPath, name), true);
             _tile.Square70x70Logo = $"{_asseteDirName}\\{name}";
         }
 
-        public void ShowNameOnSquare150x150Logo(bool show)
+        public void SetShowNameOnSquare150x150Logo(bool show)
         {
             _tile.SetShowNameOnSquare150x150Logo(show);
         }
 
-        public void MakeTile()
+        public void SetForegroundColor(bool isLight)
+        {
+            _tile.SetForegroundColor(isLight);
+        }
+
+        public void MakeTile(string path = "")
         {
             WriteManifest();
-            UpdateShortcut();
+            CreateShortcut(path);
         }
 
         public void WriteManifest()
         {
+            if (File.Exists(_manifestPath))
+            {
+                var bak = Path.ChangeExtension(_manifestPath, ".xml-wtm");
+                File.Copy(_manifestPath, bak, true);
+            }
             var settings = new XmlWriterSettings
             {
                 Indent = true,
@@ -79,22 +99,41 @@ namespace TileMakerLibrary
             }
         }
 
-        public void UpdateShortcut()
+        public void CreateShortcut(string path = "")
         {
-            string commonStartMenuPath = Environment.GetFolderPath(Environment.SpecialFolder.CommonStartMenu);
-            string appStartMenuPath = Path.Combine(commonStartMenuPath, "Programs", _desktopName + ".lnk");
-            if (!File.Exists(appStartMenuPath))
+            if (path == "")
+            {
+                string commonStartMenuPath = Environment.GetFolderPath(Environment.SpecialFolder.CommonStartMenu);
+                path = Path.Combine(commonStartMenuPath, "Programs", _desktopName + ".lnk");
+            }
+            if (!File.Exists(path))
             {
                 var shell = new IWshRuntimeLibrary.WshShell();
-                var shortcut = (IWshRuntimeLibrary.IWshShortcut)shell.CreateShortcut(appStartMenuPath);
+                var shortcut = (IWshRuntimeLibrary.IWshShortcut)shell.CreateShortcut(path);
                 string pathToExe = new FileInfo(_desktopAppPath).FullName;
                 shortcut.TargetPath = pathToExe;
                 shortcut.Save();
             }
             else
+                UpdateShortcut(path);
+        }
+
+        public void RemoveCustomization(string shortcutPath)
+        {
+            var bakFile = Path.ChangeExtension(_manifestPath, ".xml-wtm");
+            if (File.Exists(bakFile))
             {
-                File.SetLastWriteTime(appStartMenuPath, DateTime.Now);
+                File.Copy(bakFile, _manifestPath, true);
+                File.Delete(bakFile);
             }
+            if (Directory.Exists(_assetsPath))
+                Directory.Delete(_assetsPath, true);
+            UpdateShortcut(shortcutPath);
+        }
+
+        private void UpdateShortcut(string path)
+        {
+            File.SetLastWriteTime(path, DateTime.Now);
         }
     }
 }
