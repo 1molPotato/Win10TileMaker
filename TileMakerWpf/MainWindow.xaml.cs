@@ -45,13 +45,17 @@ namespace TileMakerWpf
                 var maker = new TileMaker(AppPathBox.Text);
                 if (Image150x150Logo.Source != null && Image70x70Logo.Source != null)
                 {
-                    maker.SetSquare150x150Logo(((BitmapImage)Image150x150Logo.Source).UriSource.LocalPath);
-                    maker.SetSquare70x70Logo(((BitmapImage)Image70x70Logo.Source).UriSource.LocalPath);
+                    //maker.SetSquare150x150Logo(((BitmapImage)Image150x150Logo.Source).UriSource.LocalPath);
+                    //maker.SetSquare70x70Logo(((BitmapImage)Image70x70Logo.Source).UriSource.LocalPath);
+                    maker.SetSquare150x150Logo(Image150x150Logo.Tag.ToString());
+                    maker.SetSquare70x70Logo(Image70x70Logo.Tag.ToString());
                 }
                 else if (Image150x150Logo.Source != null)
-                    maker.SetSquareLogo(((BitmapImage)Image150x150Logo.Source).UriSource.LocalPath);
+                    maker.SetSquareLogo(Image150x150Logo.Tag.ToString());
+                    //maker.SetSquareLogo(((BitmapImage)Image150x150Logo.Source).UriSource.LocalPath);
                 else
-                    maker.SetSquareLogo(((BitmapImage)Image70x70Logo.Source).UriSource.LocalPath);
+                    maker.SetSquareLogo(Image70x70Logo.Tag.ToString());
+                    //maker.SetSquareLogo(((BitmapImage)Image70x70Logo.Source).UriSource.LocalPath);
                 maker.SetShowNameOnSquare150x150Logo((bool)ShowNameCheckBox.IsChecked);
                 maker.SetForegroundColor(ForegroundColorComboBox.SelectedIndex == 0 ? true : false);
                 maker.MakeTile(ShortcutPathBox.Text);
@@ -66,15 +70,19 @@ namespace TileMakerWpf
 
         private void Load150x150LogoButton_Click(object sender, RoutedEventArgs e)
         {
-            Image150x150Logo.Source = LoadImageFromOpenFileDialog();
+            string path = "";
+            Image150x150Logo.Source = LoadImageFromOpenFileDialog(ref path);
+            Image150x150Logo.Tag = path;
         }
 
         private void Load70x70LogoButton_Click(object sender, RoutedEventArgs e)
         {
-            Image70x70Logo.Source = LoadImageFromOpenFileDialog();
+            string path = "";
+            Image70x70Logo.Source = LoadImageFromOpenFileDialog(ref path);
+            Image70x70Logo.Tag = path;
         }
 
-        private BitmapImage LoadImageFromOpenFileDialog()
+        private BitmapImage LoadImageFromOpenFileDialog(ref string path)
         {
             var dialog = new OpenFileDialog
             {
@@ -82,13 +90,27 @@ namespace TileMakerWpf
             };
             if (dialog.ShowDialog() == true)
             {
-                var bitmap = new BitmapImage();
-                bitmap.BeginInit();
-                bitmap.UriSource = new Uri(dialog.FileName);
-                bitmap.EndInit();
-                return bitmap;
-            }            
+                path = dialog.FileName;
+                return GetImage(path);
+            }                
             return null;
+        }
+        
+        private BitmapImage GetImage(string path)
+        {
+            var bitmap = new BitmapImage();
+            if (System.IO.File.Exists(path))
+            {
+                bitmap.BeginInit();
+                bitmap.CacheOption = BitmapCacheOption.OnLoad;
+                using (var ms = new System.IO.MemoryStream(System.IO.File.ReadAllBytes(path)))
+                {
+                    bitmap.StreamSource = ms;
+                    bitmap.EndInit();
+                    bitmap.Freeze();
+                }
+            }
+            return bitmap;
         }
 
         private void ResetButton_Click(object sender, RoutedEventArgs e)
@@ -111,7 +133,12 @@ namespace TileMakerWpf
                 InitialDirectory = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonStartMenu), "Programs")
         };
             if (dialog.ShowDialog() == true)
-                ShortcutPathBox.Text = dialog.FileName;            
+            {
+                var shortcut = dialog.FileName;
+                ShortcutPathBox.Text = shortcut;
+                AppPathBox.Text = Utilities.GetTargetPath(shortcut);
+            }
+                
         }
 
         private void AttachAppButton_Click(object sender, RoutedEventArgs e)

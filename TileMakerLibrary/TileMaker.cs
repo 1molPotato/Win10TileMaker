@@ -16,10 +16,16 @@ namespace TileMakerLibrary
         private string _desktopName;
 
 
-        public TileMaker(string path)
+        public TileMaker(string appPath, string shortcutPath = "")
         {
-            _desktopAppPath = path;
-            Initialise();
+            if (File.Exists(appPath))
+                _desktopAppPath = appPath;
+            else
+                _desktopAppPath = Utilities.GetTargetPath(shortcutPath);
+            if (File.Exists(_desktopAppPath))
+                Initialise();
+            else
+                throw new ArgumentException("Invalid desktop app's path");
         }
 
         private void Initialise()
@@ -74,7 +80,8 @@ namespace TileMakerLibrary
             if (File.Exists(_manifestPath))
             {
                 var bak = Path.ChangeExtension(_manifestPath, ".xml-wtm");
-                File.Copy(_manifestPath, bak, true);
+                if (!File.Exists(bak))
+                    File.Copy(_manifestPath, bak, true);
             }
             var settings = new XmlWriterSettings
             {
@@ -109,7 +116,7 @@ namespace TileMakerLibrary
             if (!File.Exists(path))
             {
                 var shell = new IWshRuntimeLibrary.WshShell();
-                var shortcut = (IWshRuntimeLibrary.IWshShortcut)shell.CreateShortcut(path);
+                var shortcut = (IWshRuntimeLibrary.IWshShortcut)shell.CreateShortcut(path);                
                 string pathToExe = new FileInfo(_desktopAppPath).FullName;
                 shortcut.TargetPath = pathToExe;
                 shortcut.Save();
@@ -134,6 +141,22 @@ namespace TileMakerLibrary
         private void UpdateShortcut(string path)
         {
             File.SetLastWriteTime(path, DateTime.Now);
+        }
+    }
+
+    public class Utilities
+    {
+        public static string GetTargetPath(string shortcutPath)
+        {
+            string ret = "";
+            if (File.Exists(shortcutPath))
+            {
+                var shell = new IWshRuntimeLibrary.WshShell();
+                var shortcut = (IWshRuntimeLibrary.IWshShortcut)shell.CreateShortcut(shortcutPath);
+                ret = shortcut.TargetPath;
+                shortcut.Save();
+            }
+            return ret;
         }
     }
 }

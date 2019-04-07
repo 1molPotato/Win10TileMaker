@@ -58,7 +58,7 @@ namespace TileMakerTest
             maker.MakeTile();
             Assert.IsTrue(File.Exists("../../TestFiles/HelloTileMaker.VisualElementsManifest.xml"));
             Assert.IsTrue(File.Exists(@"C:\ProgramData\Microsoft\Windows\Start Menu\Programs\HelloTileMaker.lnk"));
-        }
+        }        
 
         [TestMethod]
         public void RemoveCustomizationTest()
@@ -67,6 +67,18 @@ namespace TileMakerTest
             maker.RemoveCustomization(@"C:\ProgramData\Microsoft\Windows\Start Menu\Programs\HelloTileMaker.lnk");
             Assert.IsTrue(!File.Exists("../../TestFiles/HelloTileMaker.VisualElementsManifest.xml-wtm"));
             Assert.IsTrue(!File.Exists("../../TestFiles/Win10TileMaker_Assets"));
+        }
+    }
+
+    [TestClass]
+    public class UtilitiesTest
+    {
+        [TestMethod]
+        public void GetTargetPathTest()
+        {
+            string expected = new FileInfo("../../TestFiles/HelloTileMaker.exe").FullName;
+            string actual = new FileInfo(Utilities.GetTargetPath(@"C:\ProgramData\Microsoft\Windows\Start Menu\Programs\HelloTileMaker.lnk")).FullName;
+            Assert.AreEqual(expected, actual);
         }
     }
 }
