@@ -42,23 +42,19 @@ namespace TileMakerWpf
             
             try
             {
-                var maker = new TileMaker(AppPathBox.Text);
+                var maker = new TileMaker(AppPathBox.Text, ShortcutPathBox.Text);
                 if (Image150x150Logo.Source != null && Image70x70Logo.Source != null)
                 {
-                    //maker.SetSquare150x150Logo(((BitmapImage)Image150x150Logo.Source).UriSource.LocalPath);
-                    //maker.SetSquare70x70Logo(((BitmapImage)Image70x70Logo.Source).UriSource.LocalPath);
                     maker.SetSquare150x150Logo(Image150x150Logo.Tag.ToString());
                     maker.SetSquare70x70Logo(Image70x70Logo.Tag.ToString());
                 }
                 else if (Image150x150Logo.Source != null)
                     maker.SetSquareLogo(Image150x150Logo.Tag.ToString());
-                    //maker.SetSquareLogo(((BitmapImage)Image150x150Logo.Source).UriSource.LocalPath);
                 else
                     maker.SetSquareLogo(Image70x70Logo.Tag.ToString());
-                    //maker.SetSquareLogo(((BitmapImage)Image70x70Logo.Source).UriSource.LocalPath);
                 maker.SetShowNameOnSquare150x150Logo((bool)ShowNameCheckBox.IsChecked);
                 maker.SetForegroundColor(ForegroundColorComboBox.SelectedIndex == 0 ? true : false);
-                maker.MakeTile(ShortcutPathBox.Text);
+                maker.MakeTile();
             }
             catch (Exception ex)
             {
@@ -131,7 +127,7 @@ namespace TileMakerWpf
             {
                 Filter = "Shortcut files (*.lnk)|*.lnk",
                 InitialDirectory = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonStartMenu), "Programs")
-        };
+            };
             if (dialog.ShowDialog() == true)
             {
                 var shortcut = dialog.FileName;
@@ -162,8 +158,8 @@ namespace TileMakerWpf
             }
             try
             {
-                var maker = new TileMaker(appPath);
-                maker.RemoveCustomization(shortcutPath);
+                var maker = new TileMaker(appPath, shortcutPath);
+                maker.RemoveCustomization();
             }
             catch (Exception ex)
             {

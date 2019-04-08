@@ -2,7 +2,7 @@
 <Application xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
 	<VisualElements
 		BackgroundColor="#2D2D30"
-		ShowNameOnSquare150x150Logo="on"
+		ShowNameOnSquare150x150Logo="off"
 		ForegroundText="light"
 		Square150x150Logo="Win10TileMaker_Assets\150x150Logo.png"
 		Square70x70Logo="Win10TileMaker_Assets\70x70Logo.png" />

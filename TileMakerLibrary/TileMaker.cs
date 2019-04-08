@@ -9,19 +9,25 @@ namespace TileMakerLibrary
     public class TileMaker
     {
         private readonly string _asseteDirName = "Win10TileMaker_Assets";
-        private readonly string _desktopAppPath;
+        private readonly string _image150x150Name = "150x150Logo.png";
+        private readonly string _image70x70Name = "70x70Logo.png";
+        private readonly string _desktopAppPath;        
         private readonly StartMenuTile _tile = new StartMenuTile();
         private string _assetsPath;
         private string _manifestPath;
+        private string _shortcutPath;
         private string _desktopName;
+        private string _image150x150Path;
+        private string _image70x70Path;
 
 
         public TileMaker(string appPath, string shortcutPath = "")
         {
+            _shortcutPath = shortcutPath;
             if (File.Exists(appPath))
                 _desktopAppPath = appPath;
             else
-                _desktopAppPath = Utilities.GetTargetPath(shortcutPath);
+                _desktopAppPath = Utilities.GetTargetPath(_shortcutPath);
             if (File.Exists(_desktopAppPath))
                 Initialise();
             else
@@ -32,11 +38,13 @@ namespace TileMakerLibrary
         {
             var file = new FileInfo(_desktopAppPath);
             var dir = file.Directory;
-            dir.CreateSubdirectory(_asseteDirName);
+            //dir.CreateSubdirectory(_asseteDirName);
             _assetsPath = Path.Combine(dir.FullName, _asseteDirName);
             _desktopName = Path.GetFileNameWithoutExtension(file.Name);
             _manifestPath = Path.Combine(dir.FullName, $"{_desktopName}.VisualElementsManifest.xml");
         }
+
+        #region Interfaces
 
         public void SetSquareLogo(string path)
         {
@@ -47,16 +55,16 @@ namespace TileMakerLibrary
 
         public void SetSquare150x150Logo(string path)
         {
-            string name = "150x150Logo.png";
-            File.Copy(path, Path.Combine(_assetsPath, name), true);
-            _tile.Square150x150Logo = $"{_asseteDirName}\\{name}";
+            _image150x150Path = path;
+            //File.Copy(path, Path.Combine(_assetsPath, name), true);
+            _tile.Square150x150Logo = $"{_asseteDirName}\\{_image150x150Name}";
         }
 
         public void SetSquare70x70Logo(string path)
         {
-            string name = "70x70Logo.png";
-            File.Copy(path, Path.Combine(_assetsPath, name), true);
-            _tile.Square70x70Logo = $"{_asseteDirName}\\{name}";
+            _image70x70Path = path;
+            //File.Copy(path, Path.Combine(_assetsPath, name), true);
+            _tile.Square70x70Logo = $"{_asseteDirName}\\{_image70x70Name}";
         }
 
         public void SetShowNameOnSquare150x150Logo(bool show)
@@ -69,20 +77,51 @@ namespace TileMakerLibrary
             _tile.SetForegroundColor(isLight);
         }
 
-        public void MakeTile(string path = "")
+        public void MakeTile()
         {
-            WriteManifest();
-            CreateShortcut(path);
+            CreateBackup();
+            CreateAssets();
+            CreateManifest();
+            CreateShortcut();
         }
 
-        public void WriteManifest()
+        public void RemoveCustomization()
         {
-            if (File.Exists(_manifestPath))
+            var bakFile = Path.ChangeExtension(_manifestPath, ".xml-wtm");
+            if (File.Exists(bakFile))
             {
-                var bak = Path.ChangeExtension(_manifestPath, ".xml-wtm");
-                if (!File.Exists(bak))
-                    File.Copy(_manifestPath, bak, true);
+                File.Copy(bakFile, _manifestPath, true);
+                File.Delete(bakFile);
             }
+            else
+            {
+                if (Directory.Exists(_assetsPath)/* && Directory.GetFiles(_assetsPath).Length != 0*/)
+                    File.Delete(_manifestPath);
+            }
+            if (Directory.Exists(_assetsPath))
+                Directory.Delete(_assetsPath, true);
+            UpdateShortcut(_shortcutPath);
+        }
+        #endregion
+
+        #region Utilities
+
+        private void CreateBackup()
+        {
+            var bakFile = Path.ChangeExtension(_manifestPath, ".xml-wtm");
+            if (!Directory.Exists(_assetsPath) && File.Exists(_manifestPath) && !File.Exists(bakFile))
+                File.Move(_manifestPath, bakFile);
+        }
+
+        private void CreateAssets()
+        {
+            var dir = Directory.CreateDirectory(_assetsPath);
+            File.Copy(_image150x150Path, Path.Combine(_assetsPath, _image150x150Name), true);
+            File.Copy(_image70x70Path, Path.Combine(_assetsPath, _image70x70Name), true);
+        }        
+
+        private void CreateManifest()
+        {            
             var settings = new XmlWriterSettings
             {
                 Indent = true,
@@ -106,42 +145,31 @@ namespace TileMakerLibrary
             }
         }
 
-        public void CreateShortcut(string path = "")
+        private void CreateShortcut()
         {
-            if (path == "")
+            if (_shortcutPath == "")
             {
                 string commonStartMenuPath = Environment.GetFolderPath(Environment.SpecialFolder.CommonStartMenu);
-                path = Path.Combine(commonStartMenuPath, "Programs", _desktopName + ".lnk");
+                _shortcutPath = Path.Combine(commonStartMenuPath, "Programs", _desktopName + ".lnk");
             }
-            if (!File.Exists(path))
+            if (!File.Exists(_shortcutPath))
             {
                 var shell = new IWshRuntimeLibrary.WshShell();
-                var shortcut = (IWshRuntimeLibrary.IWshShortcut)shell.CreateShortcut(path);                
+                var shortcut = (IWshRuntimeLibrary.IWshShortcut)shell.CreateShortcut(_shortcutPath);                
                 string pathToExe = new FileInfo(_desktopAppPath).FullName;
                 shortcut.TargetPath = pathToExe;
                 shortcut.Save();
             }
             else
-                UpdateShortcut(path);
-        }
-
-        public void RemoveCustomization(string shortcutPath)
-        {
-            var bakFile = Path.ChangeExtension(_manifestPath, ".xml-wtm");
-            if (File.Exists(bakFile))
-            {
-                File.Copy(bakFile, _manifestPath, true);
-                File.Delete(bakFile);
-            }
-            if (Directory.Exists(_assetsPath))
-                Directory.Delete(_assetsPath, true);
-            UpdateShortcut(shortcutPath);
+                UpdateShortcut(_shortcutPath);
         }
 
         private void UpdateShortcut(string path)
         {
             File.SetLastWriteTime(path, DateTime.Now);
         }
+
+        #endregion
     }
 
     public class Utilities
@@ -154,7 +182,7 @@ namespace TileMakerLibrary
                 var shell = new IWshRuntimeLibrary.WshShell();
                 var shortcut = (IWshRuntimeLibrary.IWshShortcut)shell.CreateShortcut(shortcutPath);
                 ret = shortcut.TargetPath;
-                shortcut.Save();
+                //shortcut.Save();
             }
             return ret;
         }
